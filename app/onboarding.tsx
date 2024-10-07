@@ -6,8 +6,49 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { SymbolView} from 'expo-symbols';
 import { Colors } from "@/constants/Colors";
+import { usePermissions } from 'expo-media-library';
+import { useCameraPermissions, useMicrophonePermissions } from 'expo-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { router } from 'expo-router';
 
 export default function OnBoardingScreen() {
+  const [cameraPermissions, requestCameraPermission] = useCameraPermissions();
+  const [microPhonePermission, requestMicrophonePermission] = useMicrophonePermissions();
+  const [mediaLibraryPermission, requestMediaLibraryPermission] = useCameraPermissions();
+
+  async function handleContinue() {
+    const allPermissions = await requestAllPermissions();
+    if ( allPermissions) {
+      // navigation tabs
+      router.replace("/(tabs")
+    } else {
+      Alert.alert("To continue please provide permissions in settings")
+    }
+  }
+
+  async function requestAllPermissions() {
+    const cameraStatus = await requestCameraPermission();
+    if (!cameraStatus.granted) {
+      Alert.alert("Error", "Camera permissions is required");
+      return false;
+    }
+
+    const microphoneStatus = await requestMicrophonePermission();
+    if (!microphoneStatus.granted) {
+      Alert.alert("Error", "Microphone permissions is required");
+      return false;
+    }
+
+    const mediaLibraryStatus = await requestMediaLibraryPermission();
+    if (!mediaLibraryStatus.granted) {
+      Alert.alert("Error", "Media Library permissions is required");
+      return false;
+    }
+
+    await AsyncStorage.setItem("hasOpened", "true");
+    return true;
+  }
+  
   return (
     <ParallaxScrollView
       headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
@@ -51,7 +92,7 @@ export default function OnBoardingScreen() {
         <ThemedText type="subtitle">Media Library Permissions</ThemedText>
         <ThemedText>To save/view your amazing shots </ThemedText>
       </ThemedView>
-      <Button title="Continue" onPress={() => {}} />
+      <Button title="Continue" onPress={() => {handleContinue}} />
     </ParallaxScrollView>
   );
 }
